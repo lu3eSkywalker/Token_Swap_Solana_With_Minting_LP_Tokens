@@ -79,7 +79,7 @@ pub struct InitializeUserLiquidityAccount<'info> {
     #[account(
         init,
         payer = user,
-        space = 8 + 32 + 8,
+        space = 8 + 32 + 8 + 8,
         seeds = [b"userliquidityPDA", user.key().as_ref()],
         bump
     )]

@@ -117,6 +117,57 @@ describe("Test", () => {
     console.log("Vault Token B Account Balance: ", pda_token_value.amount.toString());
   });
 
+
+  it("Creates a Token Mint", async () => {
+    const METADATA_SEED = "metadata";
+    const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+
+    const metadata = {
+      name: "LP Token",
+      symbol: "LP",
+      uri: "https://jsonkeeper.com/b/7G05",
+      decimals: 9
+    }
+
+    const [mint] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("mint")],
+      program.programId
+    );
+
+    const [authorityPDA] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("authority")],
+      program.programId
+    );
+
+    const [metadataAddress] = web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from(METADATA_SEED),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        mint.toBuffer(),
+      ],
+      TOKEN_METADATA_PROGRAM_ID
+    );
+
+    const txHash = await program.methods
+      .createTokenMint(metadata)
+      .accounts({
+        metadata: metadataAddress,
+        mint: mint,
+        authority: authorityPDA,
+        payer: program.provider.publicKey,
+        rent: web3.SYSVAR_RENT_PUBKEY,
+        systemProgram: web3.SystemProgram.programId,
+        tokenProgram: new web3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+        tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID
+      })
+      .rpc();
+
+    console.log(`Use 'solana confirm -v ${txHash}' to see the logs`);
+
+    // Confirm Transaction
+    await program.provider.connection.confirmTransaction(txHash);
+  });
+
   it("initializes a liquidity account", async () => {
 
     const [userPDALiquidity, bump] = await web3.PublicKey.findProgramAddressSync(
@@ -125,6 +176,8 @@ describe("Test", () => {
     );
 
     const accountInfo = await program.provider.connection.getAccountInfo(userPDALiquidity);
+
+    console.log("This is the user liquidity PDA: ", userPDALiquidity.toBase58());
 
     if (accountInfo) {
       console.log("User Liquidity account is already initialized");

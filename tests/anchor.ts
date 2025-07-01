@@ -362,12 +362,6 @@ describe("Test", () => {
 
     const userATAforTokenB = destination.toBase58();
 
-    const vaultTokenAVault = await getAccount(program.provider.connection, vault_token_account_a);
-    const vaultTokenBVault = await getAccount(program.provider.connection, vault_token_account_b);
-
-    console.log("This is the value of vault_token_account_a: ", vaultTokenAVault.amount.toString());
-    console.log("This is the value of vault_token_account_b: ", vaultTokenBVault.amount.toString());
-
     const amount = new BN(1_000_000_000);
 
     const txHash = await program.methods
@@ -432,9 +426,6 @@ describe("Test", () => {
 
       await program.provider.sendAndConfirm(tx);
     }
-
-    const vaultTokenAVault = await getAccount(program.provider.connection, vault_token_account_a);
-    const vaultTokenBVault = await getAccount(program.provider.connection, vault_token_account_b);
 
     const amount = new BN(1_000_000_000);
 
