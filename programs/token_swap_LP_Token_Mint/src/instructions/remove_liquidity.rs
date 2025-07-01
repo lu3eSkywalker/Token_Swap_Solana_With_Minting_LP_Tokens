@@ -1,11 +1,20 @@
-use crate::state::liquidity_account::LiquidityAccount;
-use anchor_lang::prelude::*;
 use crate::contexts::Liquidity;
 use crate::errors::errors::TokenSwapError;
+use crate::state::liquidity_account::LiquidityAccount;
 use crate::utils::transfer::send_token_a_from_token_vault_to_user;
 use crate::utils::transfer::send_token_b_from_token_vault_to_user;
+use anchor_lang::prelude::*;
 
 pub fn removeLiquidity(ctx: Context<Liquidity>, tokenAmount: u64) -> Result<()> {
+    let pda_account_time = &ctx.accounts.user_pda_account;
+
+    let current_time = Clock::get()?;
+
+    require!(
+        current_time.unix_timestamp - pda_account_time.last_update_time >= 100,
+        TokenSwapError::TimeConstraint
+    );
+
     let userProvidedLiquidity = &mut ctx.accounts.user_pda_account;
 
     require!(

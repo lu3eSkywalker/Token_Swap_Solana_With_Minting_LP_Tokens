@@ -1,10 +1,11 @@
+use crate::state::token_mint_metadata::TokenMintMetadata;
 use anchor_lang::prelude::*;
 
+pub mod contexts;
+pub mod errors;
 pub mod instructions;
 pub mod state;
-pub mod errors;
 pub mod utils;
-pub mod contexts;
 pub use contexts::accounts::*;
 
 use instructions::*;
@@ -23,8 +24,17 @@ pub mod Simple_Token_Swap {
         instructions::initialize::initialize_vault_token_b(ctx)
     }
 
-    pub fn initialize_user_liquidity_account(ctx: Context<InitializeUserLiquidityAccount>) -> Result<()> {
+    pub fn initialize_user_liquidity_account(
+        ctx: Context<InitializeUserLiquidityAccount>,
+    ) -> Result<()> {
         instructions::initialize::initialize_user_liquidity_account(ctx)
+    }
+
+    pub fn create_token_mint(
+        ctx: Context<CreateTokenMint>,
+        metadata: TokenMintMetadata,
+    ) -> Result<()> {
+        instructions::create_token_mint::create_token_mint(ctx, metadata)
     }
 
     pub fn addLiquidity(ctx: Context<Liquidity>, tokenAmount: u64) -> Result<()> {

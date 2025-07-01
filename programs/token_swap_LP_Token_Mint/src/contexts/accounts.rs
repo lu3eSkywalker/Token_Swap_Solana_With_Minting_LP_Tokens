@@ -1,7 +1,14 @@
 use crate::state::liquidity_account::LiquidityAccount;
+use crate::state::token_mint_metadata::TokenMintMetadata;
 use anchor_lang::prelude::*;
-use anchor_spl::token::{
-    self, InitializeAccount, Mint, Token, TokenAccount, TokenAccount as SPLTokenAccount, Transfer,
+use anchor_spl::token::{self, InitializeAccount, TokenAccount as SPLTokenAccount, Transfer};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    metadata::{
+        create_metadata_accounts_v3, mpl_token_metadata::types::DataV2, CreateMetadataAccountsV3,
+        Metadata as Metaplex,
+    },
+    token::{mint_to, Mint, MintTo, Token, TokenAccount},
 };
 
 #[derive(Accounts)]
@@ -73,12 +80,45 @@ pub struct InitializeUserLiquidityAccount<'info> {
         init,
         payer = user,
         space = 8 + 32 + 8,
-        seeds = [b"liquidityPDA", user.key().as_ref()],
+        seeds = [b"userliquidityPDA", user.key().as_ref()],
         bump
     )]
     pub user_pda_account: Account<'info, LiquidityAccount>,
 
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(params: TokenMintMetadata)]
+pub struct CreateTokenMint<'info> {
+    /// CHECK: PDA derived from [b"metadata", metadata_program_id, mint]
+    #[account(mut)]
+    pub metadata: UncheckedAccount<'info>,
+
+    #[account(
+        init,
+        payer = payer,
+        seeds = [b"mint"],
+        bump,
+        mint::decimals = params.decimals,
+        mint::authority = authority.key(),
+    )]
+    pub mint: Account<'info, Mint>,
+
+    /// CHECK: PDA that controls the mint
+    #[account(
+        seeds = [b"authority"],
+        bump,
+    )]
+    pub authority: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    pub rent: Sysvar<'info, Rent>,
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub token_metadata_program: Program<'info, Metaplex>,
 }
 
 #[derive(Accounts)]
@@ -88,7 +128,7 @@ pub struct Liquidity<'info> {
 
     #[account(
         mut,
-        seeds = [b"liquidityPDA", user.key().as_ref()],
+        seeds = [b"userliquidityPDA", user.key().as_ref()],
         bump
     )]
     pub user_pda_account: Account<'info, LiquidityAccount>,
@@ -131,9 +171,39 @@ pub struct Liquidity<'info> {
 
     pub mint_b: Account<'info, Mint>,
 
-    pub token_program: Program<'info, Token>,
+    // For Minting LP Tokens
+    #[account(
+        mut,
+        seeds = [b"mint"],
+        bump,
+    )]
+    pub mint: Account<'info, Mint>,
 
+    /// CHECK
+    #[account(
+        seeds = [b"authority"],
+        bump
+    )]
+    pub authority: UncheckedAccount<'info>,
+
+    #[account(
+        init_if_needed,
+        payer = payer,
+        associated_token::mint = mint,
+        associated_token::authority = destination_owner,
+    )]
+    pub destination: Account<'info, TokenAccount>,
+
+    /// CHECK: we use this to validate token owner
+    pub destination_owner: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 #[derive(Accounts)]

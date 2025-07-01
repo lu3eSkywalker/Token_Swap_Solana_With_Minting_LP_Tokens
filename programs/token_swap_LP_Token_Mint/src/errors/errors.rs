@@ -13,4 +13,7 @@ pub enum TokenSwapError {
 
     #[msg("Insufficient amount of tokens provided in the liquidity pool")]
     InsufficientLiquidityTokens,
+
+    #[msg("Time Constraint, Can't remove liquidity before 10 days")]
+    TimeConstraint,
 }
